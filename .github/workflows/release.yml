@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
@@ -15,8 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup cache for Gradle
-        id: cache-gradle
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
@@ -29,7 +30,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'temurin'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -85,6 +86,8 @@ jobs:
 
   release:
     needs: build
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -125,7 +128,7 @@ jobs:
 
       - name: Generate Changelog
         env:
-          CHANGELOG_GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          CHANGELOG_GITHUB_TOKEN: ${{ github.token }}
         run: |
           if [ -z "${{ env.PREVIOUS_TAG }}" -o "${{ env.PREVIOUS_TAG }}" = "${{ env.VERSION }}" ]; then
             echo "No previous tag found, generating changelog for the entire history"
@@ -144,25 +147,17 @@ jobs:
           echo "Generated Changelog:"
           cat CHANGELOG.md
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Rename Release Asset
+        run: mv ./app-release.apk ./${{ env.PROJECT_NAME }}-release-${{ env.VERSION }}.apk
+
+      - name: Create GitHub Release and Upload Asset
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.VERSION }}
-          release_name: Release ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
           body_path: ./CHANGELOG.md
+          files: ./${{ env.PROJECT_NAME }}-release-${{ env.VERSION }}.apk
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./app-release.apk
-          asset_name: ${{ env.PROJECT_NAME }}-release-${{ env.VERSION }}.apk
-          asset_content_type: application/octet-stream
-
+          GITHUB_TOKEN: ${{ github.token }}

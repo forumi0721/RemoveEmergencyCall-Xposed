@@ -1,5 +1,4 @@
 <resources>
     <string name="app_name">RemoveEmergencyCall</string>
     <string name="xposeddescription">An Xposed module that hides the emergency call button.</string>
-    <string name="xposedminversion">82</string>
 </resources>

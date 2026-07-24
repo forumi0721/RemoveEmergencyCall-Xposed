@@ -1,29 +1,56 @@
 # RemoveEmergencyCall
 
-## 개요
-**RemoveEmergencyCall**는 'MY GENESIS' 앱(`com.genesis.oneapp`)에서 수행하는 루팅 탐지 및 보안 확인을 우회하여, 루팅된 환경에서도 앱을 정상적으로 사용할 수 있도록 도와주는 LSPosed 모듈입니다.
+RemoveEmergencyCall은 Android SystemUI(`com.android.systemui`)용 LSPosed 모듈입니다. SystemUI의 긴급 통화 버튼 컨트롤러 흐름을 후킹하여 잠금 화면의 긴급 통화 버튼을 숨깁니다.
+
+## 대상 앱
+
+- `com.android.systemui`
+
+대상 패키지는 libxposed 정적 scope 지원을 위해 `app/src/main/resources/META-INF/xposed/scope.list`에도 선언되어 있습니다.
 
 ## 주요 기능
-- **FxShield 우회:** `com.hmg.oneapp.security.FxShield` 클래스의 보안 스캔 로직을 후킹하여 탐지를 무력화합니다.
-- **XShield 우회:** `com.xshield` 관련 보안 로직의 자가 종료 시도를 차단합니다.
-- **방어적 후킹:** 보안 모듈에 의한 앱 강제 종료(`System.exit`, `Process.killProcess`) 시도를 감지하고 차단하여 안정적인 앱 실행을 보장합니다.
 
-## 구현 방식
-이 모듈은 Xposed 프레임워크를 활용하여 다음과 같은 작업을 수행합니다:
-1. 보안 관련 메서드가 호출될 때 인자값을 로그로 기록하고, 결과값을 조작하여 보안 검사를 통과시킵니다.
-2. 특정 보안 라이브러리의 자가 종료 메서드를 동작하지 않도록 대체합니다.
-3. 시스템 종료 명령이 특정 보안 패키지에서 발생할 경우 이를 차단합니다.
+- `EmergencyButtonController.updateEmergencyCallButton`을 후킹합니다.
+- 긴급 통화 버튼 view가 attach될 때 숨김 처리합니다.
+- `EmergencyButton.setVisibility`의 직접 visibility 변경을 차단합니다.
+- libxposed API 101 메타데이터와 protective 예외 모드를 사용합니다.
 
-## 설치 및 사용 방법
-1. **기기 준비:** 루팅된 Android 기기와 **LSPosed** 프레임워크가 설치되어 있어야 합니다.
-2. **모듈 설치:** 이 프로젝트를 빌드하여 생성된 APK를 기기에 설치합니다.
-3. **모듈 활성화:** LSPosed 관리자 앱에서 `RemoveEmergencyCall` 모듈을 활성화하고, 대상 앱으로 'MY GENESIS'를 선택합니다.
-4. **앱 실행:** 'MY GENESIS' 앱을 실행하여 루팅 탐지 없이 정상적으로 동작하는지 확인합니다.
+## 빌드
 
-## 주의 사항
-- 이 모듈은 개인적인 연구 및 학습 목적으로 개발되었습니다.
-- 금융 앱이나 보안이 중요한 앱의 우회는 보안에 취약할 수 있으므로 사용에 각별히 유의하시기 바랍니다.
-- 앱의 버전 업데이트에 따라 우회 기능이 작동하지 않을 수 있습니다.
+이 프로젝트는 libxposed 작업공간의 공통 기준에 맞춰져 있습니다.
 
-## License
-이 프로젝트는 Apache License v2.0을 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+- Gradle `9.6.1`
+- Android Gradle Plugin `9.3.0`
+- libxposed API `101.0.1`
+- Java `17`
+- compileSdk `36`
+- targetSdk `36`
+- minSdk `26`
+
+디버그 APK 빌드:
+
+```sh
+./gradlew assembleDebug
+```
+
+Lint 실행:
+
+```sh
+./gradlew lintDebug
+```
+
+## 설치
+
+1. LSPosed가 설치된 루팅 Android 기기에 APK를 설치합니다.
+2. LSPosed에서 `RemoveEmergencyCall` 모듈을 활성화합니다.
+3. 권장 scope 앱인 `com.android.systemui`를 선택합니다.
+4. 기기를 재부팅하거나 SystemUI를 재시작합니다.
+
+## 참고
+
+- 이 모듈은 개인 연구와 기기 커스터마이징 목적으로 작성되었습니다.
+- SystemUI는 기기와 ROM에 따라 내부 구현이 다릅니다. ROM 업데이트로 내부 클래스 또는 메서드 이름이 바뀌면 훅 수정이 필요할 수 있습니다.
+
+## 라이선스
+
+이 프로젝트는 Apache License 2.0을 따릅니다. 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.

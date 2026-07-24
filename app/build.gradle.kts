@@ -1,16 +1,15 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 android {
     namespace = "kr.stonecold.removeemergencycall"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "kr.stonecold.removeemergencycall"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -37,9 +36,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         buildConfig = true
     }
@@ -47,6 +43,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    lint {
+        disable += setOf("OldTargetApi", "GradleDependency", "AndroidGradlePluginVersion")
     }
 }
 
@@ -59,5 +58,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    compileOnly("de.robv.android.xposed:api:82")
+    compileOnly(libs.libxposed.api)
 }

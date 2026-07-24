@@ -1,51 +1,104 @@
 package kr.stonecold.removeemergencycall.hooks
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.util.AttributeSet
 import android.view.View
-
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage
-import kr.stonecold.removeemergencycall.common.Util
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 import kr.stonecold.removeemergencycall.common.XposedUtil
 
 object HookSystemUi {
-    private var tag: String = this::class.java.simpleName
+    private const val TAG = "HookSystemUi"
 
-    private val methodExistenceMap = mutableMapOf<String, Boolean?>()
-
-    fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam == null) {
-            return
-        }
-
-        if (lpparam.packageName == "com.android.systemui") {
-            hookSetVisibility(lpparam)
+    fun handlePackageReady(param: PackageReadyParam, xposed: XposedInterface) {
+        if (param.packageName == "com.android.systemui") {
+            hookEmergencyButton(param, xposed)
         }
     }
 
-    private fun hookSetVisibility(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam == null) {
+    @SuppressLint("PrivateApi")
+    private fun hookEmergencyButton(param: PackageReadyParam, xposed: XposedInterface) {
+        val className = "com.android.keyguard.EmergencyButton"
+        val emergencyButtonClass = runCatching {
+            Class.forName(className, false, param.classLoader)
+        }.getOrElse {
+            XposedUtil.xposedInfo(TAG, "Skipping $className: class not found")
             return
         }
 
-		XposedHelpers.findAndHookMethod(
-			View::class.java,
-			"setVisibility",
-			Int::class.javaPrimitiveType!!,
-			object : XC_MethodHook() {
-				override fun beforeHookedMethod(param: MethodHookParam) {
-					val view = param.thisObject as? View ?: return
+        hookConstructorIfExists(
+            xposed,
+            emergencyButtonClass,
+            Context::class.java
+        )
+        hookConstructorIfExists(
+            xposed,
+            emergencyButtonClass,
+            Context::class.java,
+            AttributeSet::class.java
+        )
+        hookOnFinishInflateIfExists(xposed, emergencyButtonClass)
+    }
 
-					if (view.javaClass.name == "com.android.keyguard.EmergencyButton") {
-						param.args[0] = View.GONE
-					}
-				}
-			}
-		)
+    private fun hookConstructorIfExists(
+        xposed: XposedInterface,
+        clazz: Class<*>,
+        vararg parameterTypes: Class<*>
+    ) {
+        val constructor = runCatching {
+            clazz.getDeclaredConstructor(*parameterTypes).apply {
+                isAccessible = true
+            }
+        }.getOrElse {
+            XposedUtil.xposedInfo(TAG, "Skipping ${clazz.name} constructor: method not found")
+            return
+        }
 
-		var className = "com.android.keyguard.EmergencyButton"
-		var methodName = "setVisibility"
+        xposed.hook(constructor).intercept { chain ->
+            val result = chain.proceed()
+            (chain.thisObject as? View)?.deactivate()
+            result
+        }
 
-        XposedUtil.xposedDebug(tag, "Successfully registered $className.$methodName.")
+        XposedUtil.xposedInfo(TAG, "Hooked ${clazz.name} constructor.")
+    }
+
+    private fun hookOnFinishInflateIfExists(xposed: XposedInterface, clazz: Class<*>) {
+        val methodName = "onFinishInflate"
+        val method = runCatching {
+            clazz.getDeclaredMethod(methodName).apply {
+                isAccessible = true
+            }
+        }.getOrElse {
+            XposedUtil.xposedInfo(TAG, "Skipping ${clazz.name}.$methodName: method not found")
+            return
+        }
+
+        xposed.hook(method).intercept { chain ->
+            val result = chain.proceed()
+            val view = chain.thisObject as? View
+            view?.deactivate()
+            view?.post {
+                view.layoutParams?.let { layoutParams ->
+                    layoutParams.width = 0
+                    layoutParams.height = 0
+                    view.layoutParams = layoutParams
+                }
+            }
+            result
+        }
+
+        XposedUtil.xposedInfo(TAG, "Hooked ${clazz.name}.$methodName.")
+    }
+
+    private fun View.deactivate() {
+        visibility = View.GONE
+        alpha = 0f
+        isClickable = false
+        isFocusable = false
+        isEnabled = false
+        scaleX = 0f
+        scaleY = 0f
     }
 }

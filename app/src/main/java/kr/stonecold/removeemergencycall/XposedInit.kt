@@ -1,21 +1,30 @@
 package kr.stonecold.removeemergencycall
 
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
+import kr.stonecold.removeemergencycall.common.XposedUtil
 import kr.stonecold.removeemergencycall.hooks.*
 
 @Suppress("unused")
-class XposedInit : IXposedHookLoadPackage {
-    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam == null) {
-            return
-        }
+class XposedInit : XposedModule() {
+    private companion object {
+        const val TAG = "XposedInit"
+    }
 
-        XposedBridge.log("Loaded App: " + lpparam.packageName)
+    override fun onModuleLoaded(param: ModuleLoadedParam) {
+        XposedUtil.attach(this)
 
-        if (lpparam.packageName == "com.android.systemui") {
-            HookSystemUi.handleLoadPackage(lpparam)
+        XposedUtil.xposedInfo(TAG, "Module loaded in process: ${param.processName}")
+    }
+
+    override fun onPackageReady(param: PackageReadyParam) {
+        XposedUtil.attach(this)
+
+        XposedUtil.xposedInfo(TAG, "Package ready: ${param.packageName}")
+
+        if (param.packageName == "com.android.systemui") {
+            HookSystemUi.handlePackageReady(param, this)
         }
     }
 }

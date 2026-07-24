@@ -1,10 +1,13 @@
 package kr.stonecold.removeemergencycall.common
 
-import de.robv.android.xposed.XposedBridge
+import android.util.Log
+import io.github.libxposed.api.XposedInterface
 import kr.stonecold.removeemergencycall.BuildConfig
 
 @Suppress("unused")
 object XposedUtil {
+    private var xposed: XposedInterface? = null
+
     enum class LogLevel(val level: Int) {
         TRACE(0),
         DEBUG(1),
@@ -23,51 +26,59 @@ object XposedUtil {
         LogLevel.INFO
     }
 
+    fun attach(xposed: XposedInterface) {
+        this.xposed = xposed
+    }
+
+    private fun writeLog(priority: Int, tag: String, message: String) {
+        xposed?.log(priority, tag, message)
+    }
+
     fun xposedTrace(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.TRACE.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.VERBOSE, tag, message)
         }
     }
 
     fun xposedDebug(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.DEBUG.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.DEBUG, tag, message)
         }
     }
 
     fun xposedVerbose(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.VERBOSE.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.VERBOSE, tag, message)
         }
     }
 
     fun xposedInfo(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.INFO.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.INFO, tag, message)
         }
     }
 
     fun xposedWarning(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.WARNING.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.WARN, tag, message)
         }
     }
 
     fun xposedError(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.ERROR.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.ERROR, tag, message)
         }
     }
 
     fun xposedFatal(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.FATAL.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.ASSERT, tag, message)
         }
     }
 
     fun xposedException(tag: String, message: String) {
         if (currentLogLevel.level <= LogLevel.ERROR.level) {
-            XposedBridge.log("$tag: $message")
+            writeLog(Log.ERROR, tag, message)
         }
     }
 }
