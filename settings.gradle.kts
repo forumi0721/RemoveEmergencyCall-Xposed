@@ -22,7 +22,5 @@ dependencyResolutionManagement {
         maven("https://api.xposed.info/")
     }
 }
-
 rootProject.name = "RemoveEmergencyCall"
 include(":app")
- 
