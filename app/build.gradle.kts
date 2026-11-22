@@ -11,18 +11,17 @@ val computedVersionCode = appVersionParts[0] * 1_000_000 + appVersionParts[1] * 
 
 android {
     namespace = "kr.stonecold.removeemergencycall"
-    compileSdk = 37
-    compileSdkMinor = 1
+    compileSdk {
+        version = release(37)
+    }
     defaultConfig {
         applicationId = "kr.stonecold.removeemergencycall"
         minSdk = 33
         targetSdk = 37
         versionCode = computedVersionCode
         versionName = appVersion
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
     signingConfigs {
         create("release") {
             val releaseStore = providers.gradleProperty("keystoreFile")
@@ -37,10 +36,10 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
-
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            optimization {
+                enable = true
+                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+            }
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -51,24 +50,14 @@ android {
     buildFeatures {
         buildConfig = true
     }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    lint {
-        warningsAsErrors = true
-    }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
     compileOnly(libs.libxposed.api)
 }

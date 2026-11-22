@@ -15,6 +15,8 @@ SystemUI 잠금 화면의 긴급 통화 버튼을 비활성화하는 libxposed �
 
 ## 요구 사항
 
+- Gradle 실행 JDK 27
+
 - Android 13 (API 33) 이상
 - LSPosed 및 모듈과 호환되는 Android 환경
 
@@ -26,17 +28,10 @@ SystemUI 잠금 화면의 긴급 통화 버튼을 비활성화하는 libxposed �
 
 ## 빌드
 
-로컬 디버그 APK는 다음 명령으로 빌드합니다.
+이 모듈은 별도 화면 없이 Xposed hook만 제공하므로 Compose UI 의존성은 포함하지 않습니다.
 
-```sh
-./build.sh debug
-```
 
-Lint는 다음 명령으로 실행합니다.
-
-```sh
-./gradlew lintDebug
-```
+로컬 디버그 APK는 `./build.sh debug`, 서명된 릴리스 APK는 `./build.sh release`로 빌드합니다. lint는 `./gradlew :app:lintDebug`로 실행합니다. `vMAJOR.MINOR.PATCH` 태그를 push하면 GitHub Actions가 서명된 릴리스를 빌드하고 APK를 게시합니다.
 
 ## 참고
 
